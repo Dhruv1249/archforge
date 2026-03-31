@@ -1,11 +1,14 @@
-use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 use builder::BuildType;
+use clap::{Parser, Subcommand};
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
 
-mod config;
+use crate::config::load_config;
+
 mod builder;
+mod config;
 mod profile;
-
 
 #[derive(Parser)]
 #[command(version, about, long_about=None)]
@@ -28,7 +31,6 @@ enum Commands {
     Profile,
 }
 
-
 fn main() {
     let cli = Cli::parse();
 
@@ -37,13 +39,14 @@ fn main() {
             build_type,
             output_dir,
         }) => {
-            match build_type {
-                Some(bt) => println!("{:?}", bt),
-                None => println!("No build type specified"),
+            if let Some(bt) = build_type {
+                println!("{:?}", bt);
             }
-            match output_dir {
-                Some(dir) => println!("{:?}", dir),
-                None => println!("No path specified"),
+
+            if let Some(dir) = output_dir {
+                println!("{:?}", dir);
+
+                let profile = load_config(&dir);  
             }
         }
         Some(Commands::Scan) => println!("alright we gonna scan something today"),
