@@ -1,8 +1,5 @@
 use serde::Deserialize;
-use std::{
-    collections::{ HashMap},
-    path::PathBuf,
-};
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Deserialize, Debug)]
 pub struct Profile {
@@ -34,13 +31,12 @@ struct ExcludeConfig {
     patterns: Vec<String>,
 }
 
-pub fn load_config(file: &PathBuf) -> Profile {
-    let  contents = std::fs::read_to_string(file).expect("Path not found");
-    let parsed = toml::from_str(&contents).unwrap();
+pub fn load_config(file: &PathBuf) -> Result<Profile, Box<dyn std::error::Error>> {
+    let contents = std::fs::read_to_string(file)?;
+    let parsed = toml::from_str(&contents)?;
     println!("{:#?}", parsed);
-    parsed
+    Ok(parsed)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -126,6 +122,16 @@ mod tests {
             paths = []
             patterns = []
         "#;
+
+        let result: Result<Profile, _> = toml::from_str(input);
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_malformed_toml_fails() {
+        let input = r#"
+        this is not valid toml !!!
+        [[[
+    "#;
 
         let result: Result<Profile, _> = toml::from_str(input);
         assert!(result.is_err());

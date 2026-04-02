@@ -1,7 +1,5 @@
 use builder::BuildType;
 use clap::{Parser, Subcommand};
-use std::fs::File;
-use std::io::Read;
 use std::path::PathBuf;
 
 use crate::config::load_config;
@@ -46,7 +44,10 @@ fn main() {
             if let Some(dir) = output_dir {
                 println!("{:?}", dir);
 
-                let profile = load_config(&dir);  
+                match load_config(&dir) {
+                    Ok(config) => println!("{:?}", config),
+                    Err(e) => println!("{:?}", e),
+                }
             }
         }
         Some(Commands::Scan) => println!("alright we gonna scan something today"),
