@@ -1,5 +1,9 @@
+use dirs::home_dir;
 use serde::Deserialize;
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 #[derive(Deserialize, Debug)]
 pub struct Profile {
@@ -31,9 +35,69 @@ struct ExcludeConfig {
     patterns: Vec<String>,
 }
 
+fn validate_config(config: &Profile) -> Result<(), Box<dyn std::error::Error>> {
+    if config.packages.aur_helper.is_empty() && !config.packages.aur.is_empty() {
+        return Err(
+            "\x1b[1;31mError\x1b[0m: Aur packages are given but aur helper is empty!".into(),
+        );
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_paths(confg: &Profile) -> Result<(), Box<dyn std::error::Error>> {
+    let mut non_existent_paths: (Vec<String>, Vec<String>) = (vec![], vec![]);
+    for path in &confg.configs {
+        if !Path::new(&path.1).exists() {
+            non_existent_paths.0.push(path.0.clone());
+            non_existent_paths.1.push(path.1.clone());
+        }
+    }
+    for path in &confg.scripts {
+        if !Path::new(&path.1).exists() {
+            non_existent_paths.0.push(path.0.clone());
+            non_existent_paths.1.push(path.1.clone());
+        }
+    }
+
+   
+
+    if !non_existent_paths.0.is_empty() {
+        // Formatting of string done by ai
+        let missing: Vec<String> = non_existent_paths
+            .0
+            .iter()
+            .zip(non_existent_paths.1.iter())
+            .map(|(name, path)| format!("  {} -> {}", name, path))
+            .collect();
+        return Err(format!("The following paths do not exist:\n{}", missing.join("\n")).into());
+    }
+
+   
+    Ok(())
+}
+
+fn replace_home_dir(config: &mut Profile) -> &mut Profile {
+    let home_directory = home_dir().unwrap();
+    for (_, path) in &mut config.configs {
+        *path = path.replace("~", home_directory.to_str().unwrap());
+    }
+    for (_, path) in &mut config.scripts {
+        *path = path.replace("~", home_directory.to_str().unwrap());
+    }
+    for path in &mut config.exclude.paths {
+        *path = path.replace("~", home_directory.to_str().unwrap());
+    }
+
+    config
+}
+
 pub fn load_config(file: &PathBuf) -> Result<Profile, Box<dyn std::error::Error>> {
     let contents = std::fs::read_to_string(file)?;
-    let parsed = toml::from_str(&contents)?;
+    let mut parsed = toml::from_str(&contents)?;
+    validate_config(&parsed)?;
+    replace_home_dir(&mut parsed);
+    validate_paths(&parsed)?;
     println!("{:#?}", parsed);
     Ok(parsed)
 }
