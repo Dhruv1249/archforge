@@ -5,6 +5,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
+// ----------------------------------------------------------------------
+// --------------------------------Structs-------------------------------
+// ----------------------------------------------------------------------
+
+// Main profile config struct
 #[derive(Deserialize, Debug)]
 pub struct Profile {
     profile: ProfileConfig,
@@ -35,6 +40,13 @@ struct ExcludeConfig {
     patterns: Vec<String>,
 }
 
+// ----------------------------------------------------------------------
+// --------------------------------Functions-----------------------------
+// ---------------------------------------------------------------------
+
+// Check if the config is valid
+// Currently only checks if aur helper is empty if aur packages are given
+// May be extended in future
 fn validate_config(config: &Profile) -> Result<(), Box<dyn std::error::Error>> {
     if config.packages.aur_helper.is_empty() && !config.packages.aur.is_empty() {
         return Err(
@@ -45,6 +57,7 @@ fn validate_config(config: &Profile) -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
+// Check if all paths exist
 fn validate_paths(confg: &Profile) -> Result<(), Box<dyn std::error::Error>> {
     let mut non_existent_paths: (Vec<String>, Vec<String>) = (vec![], vec![]);
     for path in &confg.configs {
@@ -60,8 +73,6 @@ fn validate_paths(confg: &Profile) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-   
-
     if !non_existent_paths.0.is_empty() {
         // Formatting of string done by ai
         let missing: Vec<String> = non_existent_paths
@@ -73,10 +84,10 @@ fn validate_paths(confg: &Profile) -> Result<(), Box<dyn std::error::Error>> {
         return Err(format!("The following paths do not exist:\n{}", missing.join("\n")).into());
     }
 
-   
     Ok(())
 }
 
+// Replace ~ with the actual home directory name
 fn replace_home_dir(config: &mut Profile) -> &mut Profile {
     let home_directory = home_dir().unwrap();
     for (_, path) in &mut config.configs {
@@ -92,6 +103,7 @@ fn replace_home_dir(config: &mut Profile) -> &mut Profile {
     config
 }
 
+// Load the config file
 pub fn load_config(file: &PathBuf) -> Result<Profile, Box<dyn std::error::Error>> {
     let contents = std::fs::read_to_string(file)?;
     let mut parsed = toml::from_str(&contents)?;
@@ -101,6 +113,10 @@ pub fn load_config(file: &PathBuf) -> Result<Profile, Box<dyn std::error::Error>
     println!("{:#?}", parsed);
     Ok(parsed)
 }
+
+// ----------------------------------------------------------------------
+// --------------------------------Tests---------------------------------
+// ----------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
