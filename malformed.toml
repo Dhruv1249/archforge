@@ -1,0 +1,28 @@
+[profile]
+name = "my-setup"
+version = "0.1.0"
+author = "dhruv"
+
+
+[packages]
+aur_helper = "yay"
+aur = ["dms", "7zip"]
+pacman = ["neovim", "git"]
+
+[configs]
+# Layer 1 - safe
+neovim = "~/.config/nvim"
+gtk = "~/.config/gtk-3.0"
+
+[hardware]
+# Layer 2 - conditional, user explicitly opted in
+gpu_driver = "nvidia"
+
+[scripts]
+post_install = "~/.local/scripts/setup.sh"
+
+[exclude]
+# user can add extra exclusions beyond defaults
+paths = ["~/.config/someapp/session"]
+patterns = ["*.log"]
+
